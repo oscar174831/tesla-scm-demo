@@ -2,7 +2,7 @@
 
 ## 30-Second Version
 
-I built a 3D Stamping SCM Command Center to show how I would bring coding and AI workflow strengths into this role. V4 connects public supplier research, should-cost levers, ECN severity, SOP timing buffer, supplier ranking, pressure questions, and a one-click SCM memo. The 3D scene is risk-driven: low and medium risk parts stamp through successfully, while high-risk conditions cause parts to slip into a reject path instead of leaving as good output.
+I built a 3D Stamping SCM Command Center to show how I would bring coding and AI workflow strengths into this role. V4 connects public supplier research, should-cost levers, ECN severity, SOP timing buffer, supplier ranking, pressure questions, and a one-click SCM memo. The 3D scene is risk-driven: low risk feeds a sheet into the die and produces a clean part, medium risk still produces a part but with inspection behavior, and high risk fails to form the part so the blank slips into reject flow.
 
 ## Demo Flow
 

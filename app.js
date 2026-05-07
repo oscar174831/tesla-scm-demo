@@ -294,6 +294,10 @@ stampedPart.rotation.set(Math.PI / 2, 0.2, 0);
 stampedPart.castShadow = true;
 scene.add(stampedPart);
 
+const failedBlank = new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.045, 0.72), materials.sheet.clone());
+failedBlank.castShadow = true;
+scene.add(failedBlank);
+
 const successGate = new THREE.Mesh(
   new THREE.TorusGeometry(0.62, 0.018, 10, 72),
   new THREE.MeshBasicMaterial({ color: 0x2fd17c, transparent: true, opacity: 0.52 })
@@ -418,8 +422,8 @@ function riskLabel(score) {
 }
 
 function outputLabel(score) {
-  if (score >= 72) return "Slip reject";
-  if (score >= 46) return "Stamped OK - watch";
+  if (score >= 72) return "Stamp failed";
+  if (score >= 46) return "Stamped - inspect";
   return "Stamped OK";
 }
 
@@ -788,11 +792,58 @@ const clock = new THREE.Clock();
 function animate() {
   const elapsed = clock.getElapsedTime();
   controls.update();
-  const ramTravel = Math.sin(elapsed * 2.2 * currentSpeed) * 0.16;
-  ram.position.y = 2.1 + ramTravel;
-  sheet.position.x = -4 + ((elapsed * 0.8 * currentSpeed) % 8);
-  stampedPart.rotation.z += 0.006 * currentSpeed;
-  stampedPart.position.y = 1.06 + Math.sin(elapsed * 1.4) * 0.05;
+  const cycle = (elapsed * 0.18 * currentSpeed) % 1;
+  const isMedium = currentRiskScore >= 46 && currentRiskScore < 72;
+  const isHigh = currentRiskScore >= 72;
+  const inputStart = new THREE.Vector3(-4.45, 0.98, 0);
+  const dieCenter = new THREE.Vector3(0, 0.98, 0);
+  const goodExit = new THREE.Vector3(4.55, 1.08, 0);
+  const rejectExit = new THREE.Vector3(3.35, 0.42, -2.85);
+  const feedT = Math.min(1, cycle / 0.34);
+  const holdT = Math.max(0, Math.min(1, (cycle - 0.34) / 0.18));
+  const exitT = Math.max(0, Math.min(1, (cycle - 0.52) / 0.48));
+  const stampPulse = Math.sin(holdT * Math.PI);
+
+  ram.position.y = 2.15 - stampPulse * (isHigh ? 0.2 : 0.62);
+  sheet.visible = cycle < 0.58 || isHigh;
+  stampedPart.visible = !isHigh && cycle >= 0.44;
+  failedBlank.visible = isHigh && cycle >= 0.44;
+
+  if (cycle < 0.34) {
+    sheet.position.lerpVectors(inputStart, dieCenter, feedT);
+    sheet.rotation.set(0, 0, 0);
+    sheet.scale.set(1, 1, 1);
+    sheet.material.color.set(0xdfe3ea);
+  } else if (cycle < 0.52) {
+    sheet.position.copy(dieCenter);
+    sheet.rotation.set(0, 0, 0);
+    sheet.scale.set(1 - stampPulse * (isHigh ? 0.05 : 0.38), 1, 1 - stampPulse * (isHigh ? 0.02 : 0.2));
+    sheet.material.color.set(isHigh ? 0xffb84d : isMedium ? 0xffd28a : 0xdfe3ea);
+  } else if (isHigh) {
+    sheet.position.lerpVectors(dieCenter, rejectExit, exitT);
+    sheet.position.y += Math.sin(exitT * Math.PI) * 0.08 - exitT * 0.18;
+    sheet.rotation.set(exitT * 0.85, -exitT * 0.42, -0.35 - exitT * 1.2);
+    sheet.scale.set(0.72, 1, 0.92);
+    sheet.material.color.set(0xe31937);
+  } else {
+    sheet.visible = false;
+  }
+
+  if (stampedPart.visible) {
+    stampedPart.position.lerpVectors(dieCenter, goodExit, exitT);
+    stampedPart.position.y += Math.sin(exitT * Math.PI) * 0.26 + (isMedium ? Math.sin(elapsed * 16) * 0.045 : 0);
+    stampedPart.position.z += isMedium ? Math.sin(elapsed * 10) * 0.08 : 0;
+    stampedPart.rotation.set(Math.PI / 2 + exitT * 1.1, elapsed * (isMedium ? 1.7 : 0.8), exitT * 1.5);
+    stampedPart.material.color.set(isMedium ? 0xffb84d : 0xdfe3ea);
+    stampedPart.scale.setScalar(isMedium ? 1.06 + Math.sin(elapsed * 9) * 0.04 : 1);
+  }
+
+  if (failedBlank.visible) {
+    failedBlank.position.lerpVectors(dieCenter, rejectExit, exitT);
+    failedBlank.position.y += Math.sin(exitT * Math.PI) * 0.16 - exitT * 0.14;
+    failedBlank.rotation.set(exitT * 1.2, elapsed * 1.4, -0.65 - exitT * 1.6);
+    failedBlank.material.color.set(0xe31937);
+  }
   particles.children.forEach((dot, index) => {
     dot.position.y += 0.005 * currentSpeed * (1 + currentRiskScore / 95);
     dot.material.opacity = 0.25 + Math.abs(Math.sin(elapsed + index)) * 0.42;
@@ -817,22 +868,18 @@ function animate() {
       marker.scale.setScalar(0.72 + currentRiskScore / 120);
     });
     outboundMarkers.forEach((marker) => {
-      const t = (elapsed * 0.18 * currentSpeed + marker.userData.offset) % 1;
-      if (currentRejectMode) {
-        const slipStart = new THREE.Vector3(0.7, 0.95, 0.08);
-        const rejectEnd = new THREE.Vector3(3.55, 0.42, -2.95);
-        marker.position.lerpVectors(slipStart, rejectEnd, t);
-        marker.position.y += Math.sin(t * Math.PI) * 0.16 - t * 0.16;
-        marker.rotation.set(elapsed * 1.3 + t * 3.2, elapsed * 1.7, -0.65 - t * 1.7);
-        marker.material.color.set(0xe31937);
-        marker.scale.set(1.55, 0.55, 1.08);
-      } else {
-        marker.position.lerpVectors(pressCenter, new THREE.Vector3(4.6, 1.04, 0), t);
-        marker.position.y += Math.sin(t * Math.PI) * 0.28;
-        marker.rotation.y = elapsed * 0.8 + t;
-        marker.material.color.set(currentRiskScore >= 46 ? 0xffb84d : 0xdfe3ea);
-        marker.scale.setScalar(currentRiskScore >= 46 ? 1.18 : 1);
+      const t = (elapsed * 0.14 * currentSpeed + marker.userData.offset) % 1;
+      if (isHigh) {
+        marker.visible = false;
+        return;
       }
+      marker.visible = cycle > 0.5 || t > 0.18;
+      marker.position.lerpVectors(pressCenter, new THREE.Vector3(4.6, 1.04, 0), t);
+      marker.position.y += Math.sin(t * Math.PI) * 0.2 + (isMedium ? Math.sin(elapsed * 12 + t) * 0.04 : 0);
+      marker.position.z += isMedium ? Math.sin(elapsed * 8 + t * 4) * 0.07 : 0;
+      marker.rotation.y = elapsed * (isMedium ? 1.5 : 0.8) + t;
+      marker.material.color.set(isMedium ? 0xffb84d : 0xdfe3ea);
+      marker.scale.setScalar(isMedium ? 1.16 : 1);
     });
   }
   riskHalo.rotation.z += 0.008 * currentSpeed;

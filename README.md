@@ -19,9 +19,9 @@ V4 is a lightweight sourcing decision cockpit that connects public supplier rese
 
 The 3D animation now reflects launch outcome, not just status:
 
-- Low risk: parts flow through the press and exit as good stamped output
-- Medium risk: parts still stamp successfully, but output is highlighted as watch status
-- High risk: parts fail the good-output path and slip into a reject chute
+- Low risk: the sheet feeds into the die, gets stamped, and exits as a clean formed part
+- Medium risk: the sheet is stamped and produces a part, but the part exits with amber inspection wobble
+- High risk: the press cycle fails to form the part; the blank slips away into reject flow
 
 That makes the scene useful in a meeting: it shows the physical consequence of cost, quality, capacity, ECN, and timing risk.
 
@@ -34,7 +34,7 @@ Excel can track dates and formulas. V4 shows the physical and causal side that a
 - Die-stage blocks highlight bottlenecks such as simulation, machining, tryout, buyoff, or homeline
 - Risk halo intensity changes with quote gap, quality, capacity, financial exposure, ECN load, and SOP buffer
 - Recommendation and pressure questions update from the same model
-- Pass/reject animation shows whether parts successfully stamp through
+- Pass/inspect/reject animation shows whether the sheet becomes a good part, inspection part, or failed blank
 
 ## Public Research Scope
 
