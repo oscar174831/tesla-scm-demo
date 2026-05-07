@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Stamping SCM Command Center V2</title>
+    <meta
+      name="description"
+      content="3D SCM dashboard for stamping supplier research, should-cost modeling, RFQ decisions, tooling milestones, and launch risk."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="visual-workspace" aria-label="3D stamping supply chain command center">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">SCM Stamping Interview Demo - V2</p>
+            <h1><span>Supplier Launch</span><span>Command Center</span></h1>
+          </div>
+          <div class="status-pill" id="statusPill">
+            <span class="pulse"></span>
+            <span id="programStatus">Launch watch</span>
+          </div>
+        </header>
+
+        <div id="sceneHost" class="scene-host">
+          <canvas id="heroScene" aria-label="Animated stamping press, die path, and supplier risk network"></canvas>
+          <div class="scene-help">Live flow: supplier capacity -> die path -> stamped service part.</div>
+          <div class="scene-overlay">
+            <div class="metric">
+              <span>Selected supplier</span>
+              <strong id="selectedSupplier">Magna benchmark</strong>
+            </div>
+            <div class="metric">
+              <span>Should-cost gap</span>
+              <strong id="gapMetric">+8.4%</strong>
+            </div>
+            <div class="metric">
+              <span>Launch risk</span>
+              <strong id="riskMetric">Medium</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="stage-rail" aria-label="Tooling and launch stages">
+          <button class="stage active" data-stage="simulation">
+            <span>Simulation</span>
+            <strong>Springback</strong>
+          </button>
+          <button class="stage" data-stage="dieDesign">
+            <span>Die Design</span>
+            <strong>Tool CAD</strong>
+          </button>
+          <button class="stage" data-stage="machining">
+            <span>Machining</span>
+            <strong>Tool steel</strong>
+          </button>
+          <button class="stage" data-stage="tryout">
+            <span>Tryout</span>
+            <strong>Dimensional</strong>
+          </button>
+          <button class="stage" data-stage="buyoff">
+            <span>Buyoff</span>
+            <strong>Scan pack</strong>
+          </button>
+          <button class="stage" data-stage="homeline">
+            <span>Homeline</span>
+            <strong>SOP ready</strong>
+          </button>
+        </div>
+      </section>
+
+      <aside class="command-panel" aria-label="SCM research and decision controls">
+        <section class="panel lead-panel">
+          <div class="panel-title">
+            <i data-lucide="radar"></i>
+            <span>Scenario Control</span>
+          </div>
+          <div class="scenario-grid">
+            <button class="scenario-button active" data-scenario="baseline">
+              <i data-lucide="activity"></i>
+              <span>Baseline</span>
+            </button>
+            <button class="scenario-button" data-scenario="quoteShock">
+              <i data-lucide="trending-up"></i>
+              <span>Quote Shock</span>
+            </button>
+            <button class="scenario-button" data-scenario="toolingDelay">
+              <i data-lucide="timer-reset"></i>
+              <span>Tooling Delay</span>
+            </button>
+            <button class="scenario-button" data-scenario="qualityContainment">
+              <i data-lucide="scan-line"></i>
+              <span>Quality Hold</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title">
+            <i data-lucide="factory"></i>
+            <span>Supplier Research</span>
+          </div>
+          <div class="supplier-picker" id="supplierPicker"></div>
+          <p class="note" id="supplierNote"></p>
+          <div class="source-links" id="sourceLinks"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title">
+            <i data-lucide="sliders-horizontal"></i>
+            <span>Should-Cost Levers</span>
+          </div>
+          <div class="lever-grid">
+            <label>
+              <span>Steel / aluminum index</span>
+              <input id="materialIndex" type="range" min="85" max="135" value="108" />
+              <b id="materialIndexValue">108%</b>
+            </label>
+            <label>
+              <span>Scrap and yield loss</span>
+              <input id="scrapRate" type="range" min="2" max="18" value="7" />
+              <b id="scrapRateValue">7%</b>
+            </label>
+            <label>
+              <span>Logistics distance</span>
+              <input id="logisticsMiles" type="range" min="50" max="1800" value="420" />
+              <b id="logisticsMilesValue">420 mi</b>
+            </label>
+            <label>
+              <span>Annual service volume</span>
+              <input id="annualVolume" type="range" min="20000" max="240000" step="5000" value="90000" />
+              <b id="annualVolumeValue">90k</b>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title">
+            <i data-lucide="circle-dollar-sign"></i>
+            <span>Decision Engine</span>
+          </div>
+          <div class="quote-grid">
+            <div>
+              <label>Supplier quote</label>
+              <strong id="piecePrice">$18.42</strong>
+            </div>
+            <div>
+              <label>Modeled should-cost</label>
+              <strong id="shouldCost">$16.98</strong>
+            </div>
+            <div>
+              <label>Tooling / capex</label>
+              <strong id="toolingCost">$1.8M</strong>
+            </div>
+            <div>
+              <label>Capacity cover</label>
+              <strong id="capacityCover">1.18x</strong>
+            </div>
+          </div>
+          <div class="cost-stack" id="costStack"></div>
+        </section>
+
+        <section class="panel action-panel">
+          <div class="panel-title">
+            <i data-lucide="clipboard-check"></i>
+            <span>SCM Action Plan</span>
+          </div>
+          <ol id="actionList"></ol>
+          <div class="questions">
+            <strong>Pressure questions to ask supplier</strong>
+            <ul id="questionList"></ul>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

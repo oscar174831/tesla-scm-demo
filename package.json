@@ -1,0 +1,21 @@
+{
+  "name": "tesla-stamping-scm-command-center",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Interview-ready 3D stamping SCM simulation for supplier research, should-cost, tooling bottlenecks, RFQ decisions, and launch risk.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "serve": "node server.js"
+  },
+  "keywords": [
+    "supply-chain",
+    "stamping",
+    "threejs",
+    "should-cost",
+    "rfq",
+    "tesla-interview"
+  ],
+  "author": "Yinghai (Oscar) Li",
+  "license": "MIT"
+}
