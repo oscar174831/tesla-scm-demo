@@ -1,16 +1,17 @@
-# Interview Pitch: Stamping SCM Command Center V3
+# Interview Pitch: Stamping SCM Command Center V4
 
 ## 30-Second Version
 
-I built a 3D Stamping SCM Command Center to show how I would bring coding and AI workflow strengths into this role. V3 is not only a visualization. It combines public supplier research, should-cost levers, ECN severity, SOP timing buffer, supplier ranking, pressure questions, and a one-click SCM memo. The 3D scene shows supplier-to-press flow, die-stage bottlenecks, launch risk, and output behavior, so the model explains the physical consequences behind the numbers.
+I built a 3D Stamping SCM Command Center to show how I would bring coding and AI workflow strengths into this role. V4 connects public supplier research, should-cost levers, ECN severity, SOP timing buffer, supplier ranking, pressure questions, and a one-click SCM memo. The 3D scene is risk-driven: low and medium risk parts stamp through successfully, while high-risk conditions cause parts to slip into a reject path instead of leaving as good output.
 
 ## Demo Flow
 
 1. Select a supplier benchmark and show how public filing links turn into research extraction fields.
 2. Move material, scrap, logistics, ECN, and SOP-buffer levers and show how the decision board changes.
 3. Explain why the recommendation is nominate, dual-source tension, or hold nomination.
-4. Click Quote Shock, Tooling Delay, or Quality Hold to show how the action plan changes.
-5. Copy the SCM memo or export CSV to show how the project becomes useful after the meeting.
+4. Click Quality Hold, increase ECN severity, or reduce SOP buffer to trigger high risk.
+5. Show the output path changing from stamped-through flow to reject-slip flow.
+6. Copy the SCM memo or export CSV to show how the project becomes useful after the meeting.
 
 ## What This Shows About Me
 

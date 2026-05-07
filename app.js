@@ -176,6 +176,7 @@ const els = {
   programStatus: document.querySelector("#programStatus"),
   gapMetric: document.querySelector("#gapMetric"),
   riskMetric: document.querySelector("#riskMetric"),
+  outputMetric: document.querySelector("#outputMetric"),
   supplierPicker: document.querySelector("#supplierPicker"),
   supplierNote: document.querySelector("#supplierNote"),
   sourceLinks: document.querySelector("#sourceLinks"),
@@ -293,6 +294,28 @@ stampedPart.rotation.set(Math.PI / 2, 0.2, 0);
 stampedPart.castShadow = true;
 scene.add(stampedPart);
 
+const successGate = new THREE.Mesh(
+  new THREE.TorusGeometry(0.62, 0.018, 10, 72),
+  new THREE.MeshBasicMaterial({ color: 0x2fd17c, transparent: true, opacity: 0.52 })
+);
+successGate.position.set(4.35, 1.08, 0);
+successGate.rotation.y = Math.PI / 2;
+scene.add(successGate);
+
+const rejectZone = new THREE.Group();
+rejectZone.position.set(2.35, 0.12, -2.7);
+scene.add(rejectZone);
+const rejectMaterial = new THREE.MeshStandardMaterial({
+  color: 0x5b151e,
+  roughness: 0.52,
+  metalness: 0.42,
+  transparent: true,
+  opacity: 0.48,
+});
+const rejectRamp = cube("rejectRamp", [1.95, 0.08, 0.82], [0, 0.34, 0], rejectMaterial, rejectZone);
+rejectRamp.rotation.z = -0.18;
+const rejectBin = cube("rejectBin", [0.9, 0.42, 0.95], [1.2, 0.2, -0.15], rejectMaterial, rejectZone);
+
 const riskHalo = new THREE.Mesh(
   new THREE.TorusGeometry(2.6, 0.018, 8, 100),
   new THREE.MeshBasicMaterial({ color: 0xe31937, transparent: true, opacity: 0.28 })
@@ -378,6 +401,7 @@ const pointer = new THREE.Vector2();
 let currentAccent = new THREE.Color(0xe31937);
 let currentRiskScore = 45;
 let currentSpeed = 1;
+let currentRejectMode = false;
 
 function money(value) {
   return `$${value.toFixed(2)}`;
@@ -391,6 +415,23 @@ function riskLabel(score) {
   if (score >= 72) return "High";
   if (score >= 46) return "Medium";
   return "Low";
+}
+
+function outputLabel(score) {
+  if (score >= 72) return "Slip reject";
+  if (score >= 46) return "Stamped OK - watch";
+  return "Stamped OK";
+}
+
+function applyQueryOverrides() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has("supplier") && suppliers[params.get("supplier")]) state.supplier = params.get("supplier");
+  if (params.has("scenario") && scenarios[params.get("scenario")]) state.scenario = params.get("scenario");
+  ["materialIndex", "scrapRate", "logisticsMiles", "annualVolume", "ecnSeverity", "sopBuffer"].forEach((key) => {
+    if (!params.has(key)) return;
+    const value = Number(params.get(key));
+    if (Number.isFinite(value)) state[key] = value;
+  });
 }
 
 function calculateModel(supplierKey = state.supplier) {
@@ -557,6 +598,7 @@ function updateStages(activeStage, riskScore) {
 function update3D(model) {
   currentAccent = new THREE.Color(model.scenario.accent);
   currentRiskScore = model.riskScore;
+  currentRejectMode = model.riskScore >= 72;
   currentSpeed = model.scenario.speed * (model.capacity < 1 ? 0.82 : 1) * Math.max(0.54, 1 - state.ecnSeverity * 0.055);
   materials.accent.color.lerp(currentAccent, 0.55);
   accentLight.color.copy(currentAccent);
@@ -564,6 +606,11 @@ function update3D(model) {
   riskHalo.material.color.copy(currentAccent);
   riskHalo.material.opacity = 0.12 + model.riskScore / 420;
   riskHalo.scale.setScalar(0.9 + model.riskScore / 105);
+  successGate.material.opacity = currentRejectMode ? 0.14 : model.riskScore >= 46 ? 0.42 : 0.72;
+  successGate.material.color.set(currentRejectMode ? 0x55565c : model.riskScore >= 46 ? 0xffb84d : 0x2fd17c);
+  rejectMaterial.opacity = currentRejectMode ? 0.82 : 0.26;
+  rejectMaterial.color.set(currentRejectMode ? 0xe31937 : 0x5b151e);
+  rejectZone.scale.setScalar(currentRejectMode ? 1.16 : 1);
   Object.entries(supplierNodes).forEach(([key, item]) => {
     const selected = key === state.supplier;
     item.node.material.color.set(selected ? model.scenario.accent : 0xffffff);
@@ -585,6 +632,7 @@ function updateAll() {
   els.programStatus.textContent = model.scenario.label;
   els.gapMetric.textContent = percent(model.gap);
   els.riskMetric.textContent = riskText;
+  els.outputMetric.textContent = outputLabel(model.riskScore);
   els.piecePrice.textContent = money(model.quote);
   els.shouldCost.textContent = money(model.shouldCost);
   els.toolingCost.textContent = `$${model.supplier.tooling.toFixed(2)}M`;
@@ -730,6 +778,10 @@ function resize() {
 
 window.addEventListener("resize", resize);
 resize();
+applyQueryOverrides();
+Object.entries(els.sliders).forEach(([key, input]) => {
+  input.value = state[key];
+});
 updateAll();
 
 const clock = new THREE.Clock();
@@ -766,11 +818,21 @@ function animate() {
     });
     outboundMarkers.forEach((marker) => {
       const t = (elapsed * 0.18 * currentSpeed + marker.userData.offset) % 1;
-      marker.position.lerpVectors(pressCenter, new THREE.Vector3(4.6, 1.04, 0), t);
-      marker.position.y += Math.sin(t * Math.PI) * 0.28;
-      marker.rotation.y = elapsed * 0.8 + t;
-      marker.material.color.set(currentRiskScore > 65 ? 0xffb84d : 0xdfe3ea);
-      marker.scale.setScalar(currentRiskScore > 65 ? 1.25 : 1);
+      if (currentRejectMode) {
+        const slipStart = new THREE.Vector3(0.7, 0.95, 0.08);
+        const rejectEnd = new THREE.Vector3(3.55, 0.42, -2.95);
+        marker.position.lerpVectors(slipStart, rejectEnd, t);
+        marker.position.y += Math.sin(t * Math.PI) * 0.16 - t * 0.16;
+        marker.rotation.set(elapsed * 1.3 + t * 3.2, elapsed * 1.7, -0.65 - t * 1.7);
+        marker.material.color.set(0xe31937);
+        marker.scale.set(1.55, 0.55, 1.08);
+      } else {
+        marker.position.lerpVectors(pressCenter, new THREE.Vector3(4.6, 1.04, 0), t);
+        marker.position.y += Math.sin(t * Math.PI) * 0.28;
+        marker.rotation.y = elapsed * 0.8 + t;
+        marker.material.color.set(currentRiskScore >= 46 ? 0xffb84d : 0xdfe3ea);
+        marker.scale.setScalar(currentRiskScore >= 46 ? 1.18 : 1);
+      }
     });
   }
   riskHalo.rotation.z += 0.008 * currentSpeed;

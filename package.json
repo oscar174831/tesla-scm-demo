@@ -1,8 +1,8 @@
 {
   "name": "tesla-stamping-scm-command-center",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "private": true,
-  "description": "Interview-ready 3D stamping SCM decision cockpit for supplier research, should-cost, ECN impact, sourcing recommendations, and launch risk.",
+  "description": "Interview-ready 3D stamping SCM decision cockpit with risk-driven stamped-part pass/reject animation.",
   "type": "module",
   "scripts": {
     "start": "node server.js",
