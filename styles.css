@@ -233,7 +233,28 @@ h1 span {
 }
 
 .lead-panel {
+  order: 1;
   background: linear-gradient(180deg, rgba(227, 25, 55, 0.17), rgba(18, 18, 20, 0.9));
+}
+
+.decision-board {
+  order: 2;
+}
+
+.research-panel {
+  order: 3;
+}
+
+.lever-panel {
+  order: 4;
+}
+
+.engine-panel {
+  order: 5;
+}
+
+.action-panel {
+  order: 6;
 }
 
 .panel-title {
@@ -261,7 +282,8 @@ h1 span {
 
 .scenario-button,
 .supplier-card,
-.source-links a {
+.source-links a,
+.memo-actions button {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -281,7 +303,8 @@ h1 span {
 
 .scenario-button:hover,
 .supplier-card:hover,
-.source-links a:hover {
+.source-links a:hover,
+.memo-actions button:hover {
   transform: translateY(-1px);
   border-color: var(--line-strong);
   background: rgba(255, 255, 255, 0.1);
@@ -335,6 +358,34 @@ h1 span {
   font-size: 12px;
 }
 
+.research-checklist {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 11px;
+}
+
+.research-chip {
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.research-chip span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.research-chip strong {
+  display: block;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
 .lever-grid {
   display: grid;
   gap: 11px;
@@ -357,6 +408,85 @@ h1 span {
 .lever-grid b {
   color: #fff;
   text-align: right;
+}
+
+.recommendation {
+  padding: 12px;
+  border: 1px solid rgba(47, 209, 124, 0.3);
+  border-radius: 8px;
+  background: rgba(47, 209, 124, 0.08);
+}
+
+.recommendation strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 18px;
+}
+
+.recommendation span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.rank-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.rank-row {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) 40px;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.rank-row span:first-child {
+  color: #fff;
+  font-weight: 750;
+}
+
+.rank-row div {
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.rank-row b {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--red), var(--green));
+}
+
+.rank-row em {
+  color: #fff;
+  font-style: normal;
+  text-align: right;
+}
+
+.memo-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 13px;
+}
+
+.memo-actions button {
+  justify-content: center;
+  min-height: 42px;
+  padding: 9px;
+  color: var(--text);
+}
+
+.memo-actions svg {
+  width: 16px;
+  height: 16px;
 }
 
 .quote-grid > div {
@@ -483,6 +613,8 @@ h1 span {
   .supplier-picker,
   .quote-grid,
   .source-links,
+  .research-checklist,
+  .memo-actions,
   .lever-grid label {
     grid-template-columns: 1fr;
   }

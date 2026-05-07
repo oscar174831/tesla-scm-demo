@@ -1,23 +1,23 @@
-# Interview Pitch: Stamping SCM Command Center V2
+# Interview Pitch: Stamping SCM Command Center V3
 
 ## 30-Second Version
 
-I built a 3D Stamping SCM Command Center to show how I would bring coding and AI workflow strengths into this role. It is not just a status tracker. It connects public supplier research, should-cost levers, tooling stages, capacity cover, quality risk, and SCM next actions in one interactive view. When I change the supplier or scenario, the 3D flow, press speed, bottleneck stage, and risk halo change, so the model shows how supplier risk physically moves into launch execution.
+I built a 3D Stamping SCM Command Center to show how I would bring coding and AI workflow strengths into this role. V3 is not only a visualization. It combines public supplier research, should-cost levers, ECN severity, SOP timing buffer, supplier ranking, pressure questions, and a one-click SCM memo. The 3D scene shows supplier-to-press flow, die-stage bottlenecks, launch risk, and output behavior, so the model explains the physical consequences behind the numbers.
 
 ## Demo Flow
 
-1. Select a supplier benchmark and show how public filing links lead to sourcing questions.
-2. Move the material index, scrap, logistics, or annual volume sliders and show the should-cost gap update.
-3. Click Quote Shock and explain cost bridge logic: material, yield, freight, overhead, margin, and tooling.
-4. Click Tooling Delay and explain how SCM works with SIE to isolate the bottleneck across simulation, die design, machining, tryout, buyoff, and homeline.
-5. Click Quality Hold and explain containment: lot exposure, service stock, scan evidence, corrective action, and controlled release.
+1. Select a supplier benchmark and show how public filing links turn into research extraction fields.
+2. Move material, scrap, logistics, ECN, and SOP-buffer levers and show how the decision board changes.
+3. Explain why the recommendation is nominate, dual-source tension, or hold nomination.
+4. Click Quote Shock, Tooling Delay, or Quality Hold to show how the action plan changes.
+5. Copy the SCM memo or export CSV to show how the project becomes useful after the meeting.
 
 ## What This Shows About Me
 
-- I can learn a technical domain quickly and translate it into a usable tool.
+- I can learn a technical domain quickly and translate it into a useful tool.
 - I understand SCM as supplier ownership, cost, timing, quality, capacity, and cross-functional execution.
-- I can use coding and AI to reduce manual work, create visibility, and make a team faster.
-- I do not overclaim confidential supplier knowledge; I use public data carefully and turn it into practical questions.
+- I can use coding and AI to reduce manual work, create visibility, and make decisions faster.
+- I know how to use public supplier data carefully without overclaiming confidential knowledge.
 
 ## Interview Line
 

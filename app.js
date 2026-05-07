@@ -19,8 +19,14 @@ const suppliers = {
     activeStage: "buyoff",
     filings: [
       ["SEC", "https://www.sec.gov/edgar/browse/?CIK=749098"],
-      ["Annual report", "https://magna-ap.magna.com/docs/default-source/financial-reports-public-filings/annual-reports/2024-annual-report---magna---aoda.pdf"],
+      ["Annual report", "https://www.magna.com/docs/default-source/financial-reports-public-filings/annual-reports/magna-2025-annual-report.pdf"],
       ["IR page", "https://www.magna.com/company/investors"],
+    ],
+    extraction: [
+      ["Financial signal", "Liquidity, capex, segment margin"],
+      ["Capacity signal", "Body/exteriors footprint"],
+      ["Risk signal", "Customer, labor, commodity exposure"],
+      ["SCM ask", "Open book quote bridge"],
     ],
     questions: [
       "What assumptions drive your blank size, yield, die amortization, and freight?",
@@ -48,6 +54,12 @@ const suppliers = {
       ["Corporate", "https://www.gestamp.com/Investors-Shareholders/Corporate-Governance/Corporate-Reports"],
       ["Sustainability", "https://www.gestamp.com/sustainability/sustainability-report"],
     ],
+    extraction: [
+      ["Financial signal", "Debt, investment, cash flow"],
+      ["Capacity signal", "Hot-stamping footprint"],
+      ["Risk signal", "Energy, customer, region exposure"],
+      ["SCM ask", "Tooling recovery plan"],
+    ],
     questions: [
       "How much of the quote is driven by hot-stamping cycle time, energy, and tool maintenance?",
       "What is the contingency plan if the assigned die shop misses machining or tryout milestones?",
@@ -71,8 +83,14 @@ const suppliers = {
     activeStage: "tryout",
     filings: [
       ["IR page", "https://www.martinrea.com/investor-relations/"],
-      ["Annual report", "https://www.martinrea.com/wp-content/uploads/Q4-2024-Annual-Report.pdf"],
-      ["Sustainability", "https://www.martinrea.com/news-release/martinrea-international-inc-publishes-2024-sustainability-report/"],
+      ["Annual report", "https://www.martinrea.com/wp-content/uploads/2025-Annual-Report.pdf"],
+      ["Sustainability", "https://www.martinrea.com/?p=7473"],
+    ],
+    extraction: [
+      ["Financial signal", "Program mix and margins"],
+      ["Capacity signal", "Lightweight structures operations"],
+      ["Risk signal", "Concentration and execution risk"],
+      ["SCM ask", "Containment capacity proof"],
     ],
     questions: [
       "What capacity cushion exists if service demand spikes or quality containment consumes good inventory?",
@@ -149,6 +167,8 @@ const state = {
   scrapRate: 7,
   logisticsMiles: 420,
   annualVolume: 90000,
+  ecnSeverity: 1,
+  sopBuffer: 18,
 };
 
 const els = {
@@ -159,11 +179,16 @@ const els = {
   supplierPicker: document.querySelector("#supplierPicker"),
   supplierNote: document.querySelector("#supplierNote"),
   sourceLinks: document.querySelector("#sourceLinks"),
+  researchChecklist: document.querySelector("#researchChecklist"),
   piecePrice: document.querySelector("#piecePrice"),
   shouldCost: document.querySelector("#shouldCost"),
   toolingCost: document.querySelector("#toolingCost"),
   capacityCover: document.querySelector("#capacityCover"),
   costStack: document.querySelector("#costStack"),
+  recommendation: document.querySelector("#recommendation"),
+  supplierRankings: document.querySelector("#supplierRankings"),
+  copyMemo: document.querySelector("#copyMemo"),
+  exportCsv: document.querySelector("#exportCsv"),
   actionList: document.querySelector("#actionList"),
   questionList: document.querySelector("#questionList"),
   scenarioButtons: [...document.querySelectorAll(".scenario-button")],
@@ -173,12 +198,16 @@ const els = {
     scrapRate: document.querySelector("#scrapRate"),
     logisticsMiles: document.querySelector("#logisticsMiles"),
     annualVolume: document.querySelector("#annualVolume"),
+    ecnSeverity: document.querySelector("#ecnSeverity"),
+    sopBuffer: document.querySelector("#sopBuffer"),
   },
   sliderValues: {
     materialIndex: document.querySelector("#materialIndexValue"),
     scrapRate: document.querySelector("#scrapRateValue"),
     logisticsMiles: document.querySelector("#logisticsMilesValue"),
     annualVolume: document.querySelector("#annualVolumeValue"),
+    ecnSeverity: document.querySelector("#ecnSeverityValue"),
+    sopBuffer: document.querySelector("#sopBufferValue"),
   },
 };
 
@@ -364,28 +393,48 @@ function riskLabel(score) {
   return "Low";
 }
 
-function calculateModel() {
-  const supplier = suppliers[state.supplier];
+function calculateModel(supplierKey = state.supplier) {
+  const supplier = suppliers[supplierKey];
   const scenario = scenarios[state.scenario];
   const scrapRate = state.scrapRate + scenario.scrapAdd;
-  const capacity = Math.max(0.72, supplier.capacity - scenario.capacityPenalty);
+  const ecnLoad = state.ecnSeverity * 0.018;
+  const capacity = Math.max(0.72, supplier.capacity - scenario.capacityPenalty - ecnLoad);
   const material = supplier.baseCost.material * (state.materialIndex / 100);
-  const stamping = supplier.baseCost.stamping * (1 + scrapRate / 100);
+  const stamping = supplier.baseCost.stamping * (1 + scrapRate / 100 + state.ecnSeverity * 0.012);
   const assembly = supplier.baseCost.assembly;
   const logistics = supplier.baseCost.logistics * (0.74 + state.logisticsMiles / 900);
-  const toolingCarry = (supplier.tooling * 1000000) / (state.annualVolume * 45);
+  const toolingCarry = (supplier.tooling * 1000000 * (1 + state.ecnSeverity * 0.05)) / (state.annualVolume * 45);
   const overhead = supplier.baseCost.overhead;
   const shouldCost = material + stamping + assembly + logistics + toolingCarry + overhead;
-  const quote = supplier.quote * scenario.quoteMultiplier;
+  const quote = supplier.quote * scenario.quoteMultiplier * (1 + state.ecnSeverity * 0.01);
   const gap = ((quote - shouldCost) / shouldCost) * 100;
   const riskScore =
     Math.max(0, gap) * 2.1 +
     Math.max(0, 1.08 - capacity) * 75 +
     (100 - supplier.quality) * 0.45 +
     (100 - supplier.financial) * 0.28 +
-    (state.scrapRate - 4) * 1.6;
+    (state.scrapRate - 4) * 1.6 +
+    state.ecnSeverity * 7.5 +
+    Math.max(0, 12 - state.sopBuffer) * 1.9 +
+    Math.max(0, -state.sopBuffer) * 2.6;
   const total = material + stamping + assembly + logistics + overhead + toolingCarry;
+  const score = Math.round(
+    Math.max(
+      1,
+      Math.min(
+        99,
+        58 +
+          supplier.capability * 0.18 +
+          supplier.quality * 0.12 +
+          supplier.financial * 0.08 +
+          capacity * 9 -
+          Math.max(0, gap) * 1.25 -
+          riskScore * 0.34
+      )
+    )
+  );
   return {
+    supplierKey,
     supplier,
     scenario,
     quote,
@@ -393,6 +442,7 @@ function calculateModel() {
     gap,
     capacity,
     riskScore: Math.round(Math.min(99, Math.max(12, riskScore))),
+    score,
     costParts: {
       Material: material,
       Stamping: stamping,
@@ -431,6 +481,50 @@ function updateSources(supplier) {
         `<a href="${url}" target="_blank" rel="noopener"><i data-lucide="external-link"></i><span>${label}</span></a>`
     )
     .join("");
+  els.researchChecklist.innerHTML = supplier.extraction
+    .map(([label, value]) => `<div class="research-chip"><span>${label}</span><strong>${value}</strong></div>`)
+    .join("");
+}
+
+function rankedModels() {
+  return supplierKeys
+    .map((key) => calculateModel(key))
+    .sort((a, b) => b.score - a.score);
+}
+
+function recommendationFor(models) {
+  const [top, second] = models;
+  const spread = top.score - second.score;
+  if (top.riskScore >= 70 || top.capacity < 0.95 || state.sopBuffer < 0) {
+    return {
+      title: "Recommendation: Hold nomination",
+      body: `Best current option is ${top.supplier.shortName}, but risk is too high. Use this meeting to force a recovery plan, capacity proof, and commercial bridge before award.`,
+    };
+  }
+  if (spread < 7 || top.capacity < 1.05 || state.ecnSeverity >= 4) {
+    return {
+      title: "Recommendation: Keep dual-source tension",
+      body: `${top.supplier.shortName} leads, but the spread is tight or launch risk is elevated. Keep ${second.supplier.shortName} warm through DFM and quote validation.`,
+    };
+  }
+  return {
+    title: `Recommendation: Nominate ${top.supplier.shortName}`,
+    body: `Current model favors ${top.supplier.shortName}: score ${top.score}, capacity ${top.capacity.toFixed(2)}x, gap ${percent(top.gap)}, and ${riskLabel(top.riskScore).toLowerCase()} launch risk.`,
+  };
+}
+
+function renderDecisionBoard(models) {
+  const recommendation = recommendationFor(models);
+  els.recommendation.innerHTML = `<strong>${recommendation.title}</strong><span>${recommendation.body}</span>`;
+  els.supplierRankings.innerHTML = models
+    .map(
+      (model) => `<div class="rank-row">
+        <span>${model.supplier.shortName}</span>
+        <div><b style="width:${model.score}%"></b></div>
+        <em>${model.score}</em>
+      </div>`
+    )
+    .join("");
 }
 
 function updateCostStack(model) {
@@ -463,7 +557,7 @@ function updateStages(activeStage, riskScore) {
 function update3D(model) {
   currentAccent = new THREE.Color(model.scenario.accent);
   currentRiskScore = model.riskScore;
-  currentSpeed = model.scenario.speed * (model.capacity < 1 ? 0.82 : 1);
+  currentSpeed = model.scenario.speed * (model.capacity < 1 ? 0.82 : 1) * Math.max(0.54, 1 - state.ecnSeverity * 0.055);
   materials.accent.color.lerp(currentAccent, 0.55);
   accentLight.color.copy(currentAccent);
   accentLight.intensity = 3.4 + model.riskScore / 18;
@@ -479,7 +573,9 @@ function update3D(model) {
     item.line.material.color.set(selected ? model.scenario.accent : 0xffffff);
     item.line.material.opacity = selected ? 0.58 : 0.15;
   });
-  updateStages(model.scenario.stage || model.supplier.activeStage, model.riskScore);
+  const activeStage =
+    state.sopBuffer < 0 ? "homeline" : state.ecnSeverity >= 4 ? "dieDesign" : model.scenario.stage || model.supplier.activeStage;
+  updateStages(activeStage, model.riskScore);
 }
 
 function updateAll() {
@@ -497,14 +593,71 @@ function updateAll() {
   els.sliderValues.scrapRate.textContent = `${state.scrapRate}%`;
   els.sliderValues.logisticsMiles.textContent = `${state.logisticsMiles} mi`;
   els.sliderValues.annualVolume.textContent = `${Math.round(state.annualVolume / 1000)}k`;
-  els.actionList.innerHTML = model.scenario.actions.map((action) => `<li>${action}</li>`).join("");
+  els.sliderValues.ecnSeverity.textContent = `${state.ecnSeverity} / 5`;
+  els.sliderValues.sopBuffer.textContent = `${state.sopBuffer} days`;
+  const dynamicActions = [
+    ...model.scenario.actions,
+    state.ecnSeverity >= 3
+      ? "Pull design engineering and SIE into an ECN lock meeting before the supplier absorbs uncontrolled tooling churn."
+      : "Keep ECN scope controlled; document commercial impact before supplier starts new tool work.",
+    state.sopBuffer <= 7
+      ? "Create a daily launch war-room cadence because SOP buffer is thin."
+      : "Use the timing buffer to close quote bridge, buyoff evidence, and packaging validation before escalation.",
+  ];
+  els.actionList.innerHTML = dynamicActions.map((action) => `<li>${action}</li>`).join("");
   els.questionList.innerHTML = model.supplier.questions.map((question) => `<li>${question}</li>`).join("");
   els.scenarioButtons.forEach((button) => button.classList.toggle("active", button.dataset.scenario === state.scenario));
+  const models = rankedModels();
   renderSupplierPicker();
   updateSources(model.supplier);
   updateCostStack(model);
+  renderDecisionBoard(models);
   update3D(model);
   if (window.lucide) window.lucide.createIcons();
+}
+
+function buildMemo() {
+  const model = calculateModel();
+  const models = rankedModels();
+  const recommendation = recommendationFor(models);
+  return [
+    "Stamping SCM Sourcing Memo",
+    `Selected supplier benchmark: ${model.supplier.name}`,
+    `Scenario: ${model.scenario.label}`,
+    `Recommendation: ${recommendation.title.replace("Recommendation: ", "")}`,
+    `Quote vs. should-cost: ${money(model.quote)} vs. ${money(model.shouldCost)} (${percent(model.gap)} gap)`,
+    `Capacity cover: ${model.capacity.toFixed(2)}x`,
+    `Launch risk: ${riskLabel(model.riskScore)} (${model.riskScore}/99)`,
+    `ECN severity: ${state.ecnSeverity}/5`,
+    `SOP buffer: ${state.sopBuffer} days`,
+    `Next actions: ${model.scenario.actions.join(" | ")}`,
+    `Supplier questions: ${model.supplier.questions.join(" | ")}`,
+  ].join("\n");
+}
+
+function exportCsv() {
+  const models = rankedModels();
+  const rows = [
+    ["supplier", "score", "quote", "should_cost", "gap_pct", "capacity_cover", "risk_score", "risk_label"],
+    ...models.map((model) => [
+      model.supplier.shortName,
+      model.score,
+      model.quote.toFixed(2),
+      model.shouldCost.toFixed(2),
+      model.gap.toFixed(1),
+      model.capacity.toFixed(2),
+      model.riskScore,
+      riskLabel(model.riskScore),
+    ]),
+  ];
+  const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "stamping-scm-supplier-scorecard.csv";
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 els.scenarioButtons.forEach((button) => {
@@ -536,6 +689,21 @@ Object.entries(els.sliders).forEach(([key, input]) => {
     updateAll();
   });
 });
+
+els.copyMemo.addEventListener("click", async () => {
+  const memo = buildMemo();
+  try {
+    await navigator.clipboard.writeText(memo);
+    els.copyMemo.querySelector("span").textContent = "Memo Copied";
+    setTimeout(() => {
+      els.copyMemo.querySelector("span").textContent = "Copy SCM Memo";
+    }, 1600);
+  } catch {
+    window.prompt("Copy SCM memo", memo);
+  }
+});
+
+els.exportCsv.addEventListener("click", exportCsv);
 
 canvas.addEventListener("pointerdown", (event) => {
   const rect = canvas.getBoundingClientRect();

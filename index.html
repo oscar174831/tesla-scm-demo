@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Stamping SCM Command Center V2</title>
+    <title>Stamping SCM Command Center V3</title>
     <meta
       name="description"
       content="3D SCM dashboard for stamping supplier research, should-cost modeling, RFQ decisions, tooling milestones, and launch risk."
@@ -24,7 +24,7 @@
       <section class="visual-workspace" aria-label="3D stamping supply chain command center">
         <header class="topbar">
           <div>
-            <p class="eyebrow">SCM Stamping Interview Demo - V2</p>
+            <p class="eyebrow">SCM Stamping Interview Demo - V3</p>
             <h1><span>Supplier Launch</span><span>Command Center</span></h1>
           </div>
           <div class="status-pill" id="statusPill">
@@ -106,7 +106,7 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel research-panel">
           <div class="panel-title">
             <i data-lucide="factory"></i>
             <span>Supplier Research</span>
@@ -114,9 +114,10 @@
           <div class="supplier-picker" id="supplierPicker"></div>
           <p class="note" id="supplierNote"></p>
           <div class="source-links" id="sourceLinks"></div>
+          <div class="research-checklist" id="researchChecklist"></div>
         </section>
 
-        <section class="panel">
+        <section class="panel lever-panel">
           <div class="panel-title">
             <i data-lucide="sliders-horizontal"></i>
             <span>Should-Cost Levers</span>
@@ -142,10 +143,33 @@
               <input id="annualVolume" type="range" min="20000" max="240000" step="5000" value="90000" />
               <b id="annualVolumeValue">90k</b>
             </label>
+            <label>
+              <span>ECN severity</span>
+              <input id="ecnSeverity" type="range" min="0" max="5" value="1" />
+              <b id="ecnSeverityValue">1 / 5</b>
+            </label>
+            <label>
+              <span>SOP timing buffer</span>
+              <input id="sopBuffer" type="range" min="-15" max="45" value="18" />
+              <b id="sopBufferValue">18 days</b>
+            </label>
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel decision-board">
+          <div class="panel-title">
+            <i data-lucide="gauge"></i>
+            <span>Sourcing Decision Board</span>
+          </div>
+          <div id="recommendation" class="recommendation"></div>
+          <div id="supplierRankings" class="rank-list"></div>
+          <div class="memo-actions">
+            <button id="copyMemo" type="button"><i data-lucide="clipboard"></i><span>Copy SCM Memo</span></button>
+            <button id="exportCsv" type="button"><i data-lucide="download"></i><span>Export CSV</span></button>
+          </div>
+        </section>
+
+        <section class="panel engine-panel">
           <div class="panel-title">
             <i data-lucide="circle-dollar-sign"></i>
             <span>Decision Engine</span>
